@@ -167,7 +167,7 @@ namespace MyApi.Controllers.v1
                 .FirstOrDefaultAsync(cancellationToken);
             if (user == null)
                 return NotFound();            
-            return new UserModel()
+            var dto= new UserModel()
             {
                 id=user.Id,
                 IsActive=user.IsActive,
@@ -175,10 +175,15 @@ namespace MyApi.Controllers.v1
                 FullName=user.FullName,
                 UserName=user.UserName,
                 RollName=await userManager.GetRolesAsync(user),
-                Discount = client.DiscountPercent,
-                UserAddress = client.ClientAddress,
-                UserPhone = client.ClientPhone
+                
             };
+            if (client!=null)
+            {
+                dto.Discount = client.DiscountPercent;
+                dto.UserAddress = client.ClientAddress;
+                dto.UserPhone = client.ClientPhone;
+            }
+            return dto;
         }
         /// <summary>
         /// This method generate JWT Token

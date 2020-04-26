@@ -19,6 +19,7 @@ using Common.Exceptions;
 using Services.ViewModels.Requests;
 using Tools;
 using System.IO;
+using MyApi.Models;
 
 namespace MyApi.Controllers.v1
 {
@@ -39,11 +40,11 @@ namespace MyApi.Controllers.v1
             _userManager = userManager;
         }
         [HttpGet("[action]/{page:int}")]
-        public async Task<ActionResult<List<Tiket>>> GetTiketList(int page,CancellationToken cancellationToken)
+        public async Task<ActionResult<List<TiketDto>>> GetTiketList(int page,CancellationToken cancellationToken)
         {
             page = page - 1;
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
-            var list = await _Tiket.TableNoTracking.Where(p => p.UserID == user.Id).OrderBy(p => p.Closed).ThenBy(p => p.DataModified).ToListAsync(cancellationToken);
+            var list = await _Tiket.TableNoTracking.Where(p => p.UserID == user.Id).Include(p => p.tiketContents).ProjectTo<TiketDto>().OrderBy(p => p.Closed).ThenBy(p => p.DataModified).ToListAsync(cancellationToken);
             list = list.Skip(10 * page).Take(10).ToList();
             //var ticketsFromRepo = (await _Tiket
             //        .GetManyAsyncPaging(p => p.UserID == user.Id, s => s.OrderBy(x => x.Closed).ThenByDescending(x => x.DataModified), "",
@@ -51,14 +52,14 @@ namespace MyApi.Controllers.v1
             return list;
         }
         [HttpGet("[action]/{id}")]
-        public async Task<ActionResult<Tiket>> GetTiket(int id, CancellationToken cancellationToken)
+        public async Task<ActionResult<TiketDto>> GetTiket(int id, CancellationToken cancellationToken)
         {
             
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
-            var Tiket =await _Tiket.TableNoTracking.Where(p => p.UserID == user.Id&&p.Id==id).FirstOrDefaultAsync(cancellationToken);
+            var Tiket =await _Tiket.TableNoTracking.Where(p => p.UserID == user.Id&&p.Id==id).Include(p=>p.tiketContents).ProjectTo<TiketDto>().FirstOrDefaultAsync(cancellationToken);
             if (Tiket!=null)
             {
-                return Ok(Tiket);
+                return Tiket;
             }
             else
             {
@@ -83,7 +84,7 @@ namespace MyApi.Controllers.v1
             }
         }
         [HttpPost("[action]")]
-        public async Task<ActionResult<Tiket>> AddTiket(AddNewTiket dto, CancellationToken cancellationToken)
+        public async Task<ActionResult<TiketDto>> AddTiket([FromForm]AddNewTiket dto, CancellationToken cancellationToken)
         {
 
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -100,7 +101,40 @@ namespace MyApi.Controllers.v1
                     Title=dto.Title
                 };
                 await _Tiket.AddAsync(tiket, cancellationToken);
-                var respons =await _Tiket.TableNoTracking.FirstOrDefaultAsync(p => p.Id == tiket.Id, cancellationToken);
+                var model = new TiketContent()
+                {
+                    TiketId = tiket.Id,
+                    Text = dto.Text,
+                    IsAdminSide = false,
+                    FileURL = "",
+                };
+                if (dto.File != null)
+                {
+                    if (dto.File.Length > 0)
+                    {
+                        var check = CheckContentdocument.isdocoment(dto.File);
+                        if (check == true)
+                        {
+                            bool exists = System.IO.Directory.Exists(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + tiket.Id));
+
+                            if (!exists)
+                                System.IO.Directory.CreateDirectory(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + tiket.Id));
+                            var uploads = Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + tiket.Id);
+                            int CountFile = System.IO.Directory.GetFiles(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + tiket.Id)).Length;
+                            string FName = tiket.Id.ToString() + CountFile.ToString() + Path.GetExtension(dto.File.FileName);
+                            var filePath = Path.Combine(uploads, FName);
+                            using (var fileStream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await dto.File.CopyToAsync(fileStream);
+                            }
+                            model.FileURL = FName;
+                        }
+
+                    }
+                }
+                await _TiketContent.AddAsync(model, cancellationToken);
+
+                var respons =await _Tiket.TableNoTracking.Include(p=>p.tiketContents).ProjectTo<TiketDto>().FirstOrDefaultAsync(p => p.Id == tiket.Id, cancellationToken);
                 return respons;
 
             }
@@ -110,11 +144,11 @@ namespace MyApi.Controllers.v1
             }
         }
         [HttpPost("[action]/{id}")]
-        public async Task<ActionResult<TiketContent>> AddTiketContent(int id,TiketContentViewModel dto, CancellationToken cancellationToken)
+        public async Task<ActionResult<TiketContentDto>> AddTiketContent(int id, [FromForm]TiketContentViewModel dto, CancellationToken cancellationToken)
         {
 
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
-            var Tiket = await _Tiket.TableNoTracking.Where(p => p.UserID == user.Id && p.Id == id).FirstOrDefaultAsync(cancellationToken);
+            var Tiket =  _Tiket.GetById(id);
             if (Tiket!=null)
             {
                 var model = new TiketContent()
@@ -124,29 +158,36 @@ namespace MyApi.Controllers.v1
                     IsAdminSide = false,
                     FileURL = "",
                 };
-                if (dto.File.Length>0)
+                if (dto.File!=null)
                 {
-                    var check = CheckContentdocument.isdocoment(dto.File);
-                    if (check==true)
+                    if (dto.File.Length > 0)
                     {
-                        bool exists = System.IO.Directory.Exists(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + Tiket.Id));
-
-                        if (!exists)
-                            System.IO.Directory.CreateDirectory(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + Tiket.Id));
-                        var uploads = Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + Tiket.Id);
-                        int CountFile = System.IO.Directory.GetFiles(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + Tiket.Id)).Length;
-                        string FName = Tiket.Id.ToString() + CountFile.ToString() + Path.GetExtension(dto.File.FileName);
-                        var filePath = Path.Combine(uploads, FName);
-                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        var check = CheckContentdocument.isdocoment(dto.File);
+                        if (check == true)
                         {
-                            await dto.File.CopyToAsync(fileStream);
+                            bool exists = System.IO.Directory.Exists(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + Tiket.Id));
+
+                            if (!exists)
+                                System.IO.Directory.CreateDirectory(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + Tiket.Id));
+                            var uploads = Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + Tiket.Id);
+                            int CountFile = System.IO.Directory.GetFiles(Path.Combine(_hostingEnvironment.WebRootPath, "uploads/Tiket/" + Tiket.Id)).Length;
+                            string FName = Tiket.Id.ToString() + CountFile.ToString() + Path.GetExtension(dto.File.FileName);
+                            var filePath = Path.Combine(uploads, FName);
+                            using (var fileStream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await dto.File.CopyToAsync(fileStream);
+                            }
+                            model.FileURL = FName;
                         }
-                        model.FileURL = FName;
+
                     }
-                     
                 }
-                _TiketContent.Add(model);
-                return model;
+                Tiket.DataModified = DateTime.Now;
+               await  _Tiket.UpdateAsync(Tiket,cancellationToken);
+               await _TiketContent.AddAsync(model,cancellationToken);
+               
+                
+                return await _TiketContent.TableNoTracking.Where(p => p.Id == model.Id).ProjectTo<TiketContentDto>().FirstOrDefaultAsync();
             }
             throw new BadRequestException("مشکلی در فرایند ثبت پیغام به وجود آمده");
         }
