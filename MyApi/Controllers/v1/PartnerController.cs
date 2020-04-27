@@ -84,7 +84,7 @@ namespace MyApi.Controllers.v1
             model.UserFullName = user.FullName;
             var list = await _Factor.TableNoTracking.Where(p => p.Client_ID == client.Id && p.FactorType == FactorType.PendingToAccept).Include(p => p.Product_Factor).ProjectTo<FactorDto>().ToListAsync();
             model.FactorPernding = list;
-            model.ManufactureDto = await _Manufacture.TableNoTracking.Include(p => p.Factor).Where(p => p.Factor.Client_ID == client.Id && (p.ConditionManufacture == ConditionManufacture.PendingForConstruction ||
+            model.ManufactureDto = await _Manufacture.TableNoTracking.Include(p => p.ManufactureHistories).Where(p => p.Factor.Client_ID == client.Id && (p.ConditionManufacture == ConditionManufacture.PendingForConstruction ||
             p.ConditionManufacture == ConditionManufacture.Cut ||
             p.ConditionManufacture == ConditionManufacture.Built
             )).ProjectTo<ManufactureDto>().ToListAsync();
@@ -328,5 +328,20 @@ namespace MyApi.Controllers.v1
 
             return NotFound();
         }
+
+        #region PartnerAccoutingController
+        [HttpPost("[action]")]
+        [Authorize]
+        public async Task<ApiResult> ChangePassword([FromForm]Passwordchange dto ,CancellationToken cancellationToken)
+        {
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
+            var respons =await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+            if (respons.Succeeded)
+            {
+                return Ok();
+            }
+            throw new BadRequestException("مشکلی در فرایند تغییر رمز عبور پیش آمده");
+        }
+        #endregion
     }
 }
