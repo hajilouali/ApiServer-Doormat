@@ -279,7 +279,6 @@ namespace MyApi.Controllers.v1
         }
 
         [HttpPost("[action]")]
-        [Authorize(Roles = "Admin,Accountants")]
 
         public async Task<ApiResult<List<SanadDto>>> AccountingHeadingMoein(AcountingMoein ClientMoein, CancellationToken cancellationToken)
         {
