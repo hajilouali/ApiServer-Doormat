@@ -280,7 +280,7 @@ namespace MyApi.Controllers.v1
             return Ok(useer);
         }
         [HttpGet("[action]/{RollName}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Accountants")]
         public virtual async Task<ActionResult<List<UserModel>>> GetUsersInRoll(string RollName, CancellationToken cancellationToken)
         {
             //var userName = HttpContext.User.Identity.GetUserName();

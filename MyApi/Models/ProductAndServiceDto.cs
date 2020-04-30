@@ -30,7 +30,7 @@ namespace MyApi.Models
                     src.UnitType == UnitType.Unit ? "عدد" : ""));
             mappingExpression.ForMember(
                 dest => dest.UnitPricestring,
-                config => config.MapFrom(src => $"{src.UnitPrice.ToString("C0")}"));
+                config => config.MapFrom(src => $"{src.UnitPrice.ToString("N0")} ریال"));
 
         }
     }

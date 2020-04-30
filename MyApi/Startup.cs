@@ -58,6 +58,16 @@ namespace MyApi
             services.AddDbContext(Configuration);
 
             services.AddCustomIdentity(_siteSetting.IdentitySettings);
+            // Add service and create Policy with options
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials());
+            });
+
             services.AddMvc(options =>
             {
                 options.Filters.Add(new AuthorizeFilter());
@@ -83,7 +93,7 @@ namespace MyApi
             app.IntializeDatabase();
 
             app.UseCustomExceptionHandler();
-
+            app.UseCors("CorsPolicy");
             app.UseHsts(env);
 
             app.UseElmah();
