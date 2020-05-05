@@ -65,18 +65,25 @@ namespace MyApi.Controllers.v1
         }
         
         [HttpGet("[action]")]
-        public async Task<ActionResult<PartnerIformation>> GetCurentUserInformation()
+        public async Task<ActionResult<PartnerIformation>> GetCurentUserInformation(CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
             var client =  _Client.Entities.Where(p => p.User_ID==user.Id).FirstOrDefault();
             PersianCalendar PersianCalendar1 = new PersianCalendar();
             AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
-            
 
-            var s = PersianDate.ToPersianDateString(DateTime.Now);
-            PersianCalendar pc = new PersianCalendar();
-            var startyear = new DateTime(pc.GetYear(DateTime.Now),01, 01, 00,00,01);
-            var startmonth = new DateTime(pc.GetYear(DateTime.Now), pc.GetMonth(DateTime.Now), 01, 00, 00, 01);
+            var ddd = (DateTime.Now.ToPersianDigitalDateTimeString()).Substring(0,10);
+            var s = PersianDate.ToGeorgianDateTime(ddd);
+            var sy = PersianDate.ToGeorgianDateTime(string.Format(ddd.Substring(0, 5)+"01/01"));
+            var sm = PersianDate.ToGeorgianDateTime(string.Format(ddd.Substring(0, 8) + "01"));
+
+            var startyear = new DateTime(year: sy.Year, sy.Month, day: sy.Day, hour: 00, minute: 00, second: 00);
+            var startmonth = new DateTime(year: sm.Year, month: sm.Month, day: sm.Day, hour: 00, minute: 00, second: 00);
+
+            //var s = PersianDate.ToPersianDateString(DateTime.Now);
+            //PersianCalendar pc = new PersianCalendar();
+            //DateTime startyear = (new DateTime(pc.GetYear(DateTime.Now), 01, 01, 00,00,01));
+            //var startmonth = new DateTime(pc.GetYear(DateTime.Now), pc.GetMonth(DateTime.Now), 01, 00, 00, 01);
             PartnerIformation model = new PartnerIformation();
             model.ClientAccountingStatus = await usersProcess.ClientAccountingStatus(client.Id);
             model.UserID = user.Id;
@@ -88,11 +95,12 @@ namespace MyApi.Controllers.v1
             p.ConditionManufacture == ConditionManufacture.Cut ||
             p.ConditionManufacture == ConditionManufacture.Built
             )).ProjectTo<ManufactureDto>().ToListAsync();
+            var cc = await _Factor.TableNoTracking.Where(p => p.Client_ID == client.Id).ToListAsync(cancellationToken);
             model.PartnerFactorCunt = new PartnerFactorCunt()
             {
-                All = await _Factor.TableNoTracking.Where(p => p.Client_ID == client.Id).CountAsync(),
-                    InMonth = await _Factor.TableNoTracking.Where(p => p.Client_ID == client.Id && p.DateTime >= startmonth).CountAsync(),
-                    Inyear = await _Factor.TableNoTracking.Where(p => p.Client_ID == client.Id && p.DateTime >= startyear).CountAsync()
+                All = cc.Count(),
+                    InMonth = cc.Where(p =>p.DateTime >= startmonth).Count(),
+                    Inyear = cc.Where(p => p.DateTime >= startyear).Count()
                 };
             return model;
         }

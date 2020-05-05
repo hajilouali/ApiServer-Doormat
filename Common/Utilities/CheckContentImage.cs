@@ -103,6 +103,7 @@ namespace Tools
                         postedFile.ContentType.ToLower() != "image/png" &&
                 postedFile.ContentType.ToLower() != "application/pdf" &&
                 postedFile.ContentType.ToLower() != "application/msword" &&
+                postedFile.ContentType.ToLower() != "application/vnd.ms-word" &&
                 postedFile.ContentType.ToLower() != "application/vnd.openxmlformats-officedocument.wordprocessingml.document" &&
                 postedFile.ContentType.ToLower() != "application/x-rar-compressed" &&
                 postedFile.ContentType.ToLower() != "application/zip" 

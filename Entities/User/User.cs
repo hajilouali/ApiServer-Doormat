@@ -28,6 +28,7 @@ namespace Entities
         public ICollection<Client> Clients { get; set; }
         public ICollection<ExpertHistory> ExpertHistories { get; set; }
         public ICollection<Tiket> Tikets { get; set; }
+        public ICollection<TiketContent> TiketContents { get; set; }
 
     }
 

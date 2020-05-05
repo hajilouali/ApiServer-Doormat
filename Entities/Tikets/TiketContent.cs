@@ -19,12 +19,15 @@ namespace Entities.Tikets
         public string FileURL { get; set; }
         public DateTime DataCreate { get; set; }
         public DateTime DataModified { get; set; }
+        public int UserID { get; set; }
         public Tiket Tiket { get; set; }
+        public User User { get; set; }
         public class ManufactureConfiguration : IEntityTypeConfiguration<TiketContent>
         {
             public void Configure(EntityTypeBuilder<TiketContent> builder)
             {
                 builder.HasOne(p => p.Tiket).WithMany(p => p.tiketContents).HasForeignKey(p => p.TiketId);
+                builder.HasOne(p => p.User).WithMany(p => p.TiketContents).HasForeignKey(p => p.UserID);
                 builder.Property(p => p.Text).HasMaxLength(1000);
                 builder.Property(p => p.FileURL).HasMaxLength(500);
             }

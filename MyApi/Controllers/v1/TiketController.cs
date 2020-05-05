@@ -66,8 +66,9 @@ namespace MyApi.Controllers.v1
                 throw new BadRequestException("مشکلی در فرایند مشاهده تیکت ایجاد شده است");
             }
         }
+
         [HttpGet("[action]/{id}")]
-        public async Task<ActionResult<List<TiketContent>>> GetTiketContent(int id, CancellationToken cancellationToken)
+        public async Task<ActionResult<List<TiketContentDto>>> GetTiketContent(int id, CancellationToken cancellationToken)
         {
 
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
@@ -75,7 +76,7 @@ namespace MyApi.Controllers.v1
             if (Tiket != null)
             {
                 
-                var model =await _TiketContent.TableNoTracking.Where(p => p.TiketId == Tiket.Id).ToListAsync(cancellationToken);
+                var model =await _TiketContent.TableNoTracking.Where(p => p.TiketId == Tiket.Id).ProjectTo<TiketContentDto>().ToListAsync(cancellationToken);
                 return Ok(model);
             }
             else
@@ -107,6 +108,7 @@ namespace MyApi.Controllers.v1
                     Text = dto.Text,
                     IsAdminSide = false,
                     FileURL = "",
+                    UserID = user.Id
                 };
                 if (dto.File != null)
                 {
@@ -157,6 +159,7 @@ namespace MyApi.Controllers.v1
                     Text = dto.Text,
                     IsAdminSide = false,
                     FileURL = "",
+                    UserID=user.Id
                 };
                 if (dto.File!=null)
                 {
