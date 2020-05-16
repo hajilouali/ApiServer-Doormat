@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper.QueryableExtensions;
+using Common;
 using Common.Exceptions;
 using Data.Repositories;
 using Entities;
@@ -17,6 +18,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using MyApi.Models;
 using Services.Bessines;
 using Services.ViewModels.Requests;
@@ -44,8 +46,8 @@ namespace MyApi.Controllers.v1
         private readonly IRepository<ManufactureHistory> _ManufactureHistory;
         private readonly IRepository<ExpertHistory> _ExpertHistory;
         private readonly IRepository<SanadAttachment> _SanadAttachment;
-
-        public PartnerController(IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, UserManager<User> userManager, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, IRepository<ExpertHistory> expertHistory, IRepository<SanadAttachment> sanadAttachment)
+        private readonly SiteSettings _siteSetting;
+        public PartnerController(IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, UserManager<User> userManager, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, IRepository<ExpertHistory> expertHistory, IRepository<SanadAttachment> sanadAttachment, IConfiguration configuration)
         {
             _Factor = factor;
             _Product_Factor = product_Factor;
@@ -62,15 +64,16 @@ namespace MyApi.Controllers.v1
             _ManufactureHistory = manufactureHistory;
             _ExpertHistory = expertHistory;
             _SanadAttachment = sanadAttachment;
+            _siteSetting = configuration.GetSection(nameof(SiteSettings)).Get<SiteSettings>();
         }
-        
+
         [HttpGet("[action]")]
         public async Task<ActionResult<PartnerIformation>> GetCurentUserInformation(CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
             var client =  _Client.Entities.Where(p => p.User_ID==user.Id).FirstOrDefault();
             PersianCalendar PersianCalendar1 = new PersianCalendar();
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
 
             var ddd = (DateTime.Now.ToPersianDigitalDateTimeString()).Substring(0,10);
             var s = PersianDate.ToGeorgianDateTime(ddd);
@@ -109,7 +112,7 @@ namespace MyApi.Controllers.v1
         {
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
             var client = _Client.Entities.Where(p => p.User_ID == user.Id).FirstOrDefault();
-            var Factors = await _Factor.TableNoTracking.Where(p=>p.Client_ID==client.Id).Include(p => p.Product_Factor ).Include(p=>p.Manufacture).ProjectTo<FactorDto>().ToListAsync(cancellationToken);
+            var Factors = await _Factor.TableNoTracking.Where(p=>p.Client_ID==client.Id).OrderByDescending(p=>p.DateTime).Include(p => p.Product_Factor ).Include(p=>p.Manufacture).ProjectTo<FactorDto>().ToListAsync(cancellationToken);
             if (!string.IsNullOrEmpty(GetFactorDto.StartDate) && !string.IsNullOrEmpty(GetFactorDto.EndDate))
             {
                 var s = PersianDate.ToGeorgianDateTime(GetFactorDto.StartDate);
@@ -245,7 +248,7 @@ namespace MyApi.Controllers.v1
         {
             var user = await _userManager.FindByNameAsync(User.Identity.Name);
             dto.UserID = user.Id;
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respons = await usersProcess.AddCellsPartnerFactor(dto);
             if (respons != 0)
             {
@@ -269,7 +272,7 @@ namespace MyApi.Controllers.v1
                 .FirstOrDefaultAsync(cancellationToken);
             if (factor.Client.User_ID==user.Id)
             {
-                AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+                AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
                 var respons = await usersProcess.UpdatePartnerFactor(id,dto);
                 if (respons)
                 {

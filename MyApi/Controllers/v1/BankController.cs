@@ -1,4 +1,5 @@
 ﻿using AutoMapper.QueryableExtensions;
+using Common;
 using Common.Exceptions;
 using Data.Repositories;
 using Entities;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using MyApi.Models;
 using Services.Bessines;
 using System;
@@ -37,7 +39,9 @@ namespace MyApi.Controllers.v1
         private readonly IRepository<ManufactureHistory> _ManufactureHistory;
         private readonly IRepository<ExpertHistory> _ExpertHistory;
         private readonly IRepository<SanadAttachment> _SanadAttachment;
-        public BankController(IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, IRepository<ExpertHistory> expertHistory, IRepository<SanadAttachment> sanadAttachment)
+        private readonly SiteSettings _siteSetting;
+
+        public BankController(IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, IRepository<ExpertHistory> expertHistory, IRepository<SanadAttachment> sanadAttachment, IConfiguration configuration)
         {
             _Factor = factor;
             _Product_Factor = product_Factor;
@@ -53,6 +57,7 @@ namespace MyApi.Controllers.v1
             _ManufactureHistory = manufactureHistory;
             _ExpertHistory = expertHistory;
             _SanadAttachment = sanadAttachment;
+            _siteSetting = configuration.GetSection(nameof(SiteSettings)).Get<SiteSettings>();
         }
 
         [HttpGet]
@@ -77,7 +82,7 @@ namespace MyApi.Controllers.v1
         [HttpPost]
         public async Task<ApiResult<BankDto>> Create(BankDto dto, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory,_ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory,_ExpertHistory, _SanadAttachment);
             var respons = await usersProcess.AddToBank(dto.ToEntity());
             if (respons)
                 return dto;
@@ -86,7 +91,7 @@ namespace MyApi.Controllers.v1
         [HttpPut("{id:int}")]
         public async Task<ApiResult<BankDto>> Update(int id, BankDto dto, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory,_ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory,_ExpertHistory, _SanadAttachment);
             var respons = await usersProcess.UpdateBank(id,dto.ToEntity());
             if (respons)
                 return Ok();

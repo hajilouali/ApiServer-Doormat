@@ -1,8 +1,11 @@
-﻿using Data.Repositories;
+﻿using Common;
+using Data.Repositories;
 using Entities;
 using Entities.Accounting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using Services.Services;
 using Services.ViewModels.Requests;
 using Services.ViewModels.Response;
 using System;
@@ -33,7 +36,8 @@ namespace Services.Bessines
         private readonly IRepository<ManufactureHistory> _ManufactureHistory;
         private readonly IRepository<ExpertHistory> _ExpertHistory;
         private readonly IRepository<SanadAttachment> _SanadAttachment;
-        public AccountingProgres(IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, IRepository<ExpertHistory> expertHistory, IRepository<SanadAttachment> sanadAttachment)
+        private readonly SiteSettings _siteSetting;
+        public AccountingProgres(SiteSettings settings, IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, IRepository<ExpertHistory> expertHistory, IRepository<SanadAttachment> sanadAttachment)
         {
             _Factor = factor;
             _Product_Factor = product_Factor;
@@ -49,6 +53,7 @@ namespace Services.Bessines
             _ManufactureHistory = manufactureHistory;
             _ExpertHistory = expertHistory;
             _SanadAttachment = sanadAttachment;
+            _siteSetting = settings;
         }
         #region Factor
         public async Task<int> AddCellsPartnerFactor(AddFactorPartnerViewModel AddFactorViewModel, List<IFormFile> file = null)
@@ -66,7 +71,7 @@ namespace Services.Bessines
                 {
                     foreach (var item in AddFactorViewModel.rows)
                     {
-                        
+
                         var p = _ProductAndService.Entities.Find(item.ProductAndService_ID);
                         item.UnitPrice = p.UnitPrice;
                         if (p.UnitType == UnitType.SquareMeters)
@@ -82,6 +87,56 @@ namespace Services.Bessines
                 Factor.Discount = Factor.TotalPrice * (client.DiscountPercent / 100);
                 Factor.FactorPrice = Factor.TotalPrice - Factor.Discount;
                 _Factor.Add(Factor);
+                //ارسال اس ام اس 
+                if (!string.IsNullOrEmpty(client.ClientPhone))
+                {
+                    try
+                    {
+                        SMSManager sMSManager = new SMSManager(_siteSetting.SMSConfiguration.ApiKey, _siteSetting.SMSConfiguration.SecurityCode);
+                        SmsIrRestful.UltraFastParameters[] paramert =
+                        {
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "UserName",
+                    ParameterValue = client.ClientName
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "FactorType",
+                    ParameterValue = "پیش فاکتور"
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "FactorNumber",
+                    ParameterValue = Factor.Id.ToString()
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "Price",
+                    ParameterValue = Factor.FactorPrice.ToString("n0")+"ريال"
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "Description",
+                    ParameterValue = ""
+                }
+                };
+                        var mobile = long.Parse(client.ClientPhone);
+                        var dto = new SmsIrRestful.UltraFastSend()
+                        {
+                            Mobile = mobile,
+                            ParameterArray = paramert,
+                            TemplateId = _siteSetting.SMSConfiguration.FactorThemplateID
+                        };
+                        var sms = sMSManager.VerificationCodeByThemplate(dto);
+                    }
+                    catch (Exception)
+                    {
+
+                        throw;
+                    }
+                }
+
                 //ذخیره ردیف های فاکتور
                 List<Product_Factor> listrow = new List<Product_Factor>();
                 foreach (var item in AddFactorViewModel.rows)
@@ -108,7 +163,7 @@ namespace Services.Bessines
                 _Product_Factor.AddRange(listrow);
                 //ذخیره پیوست های فاکتور
 
-                if (file!=null&&file.Count>0)
+                if (file != null && file.Count > 0)
                 {
                     int index = 0;
 
@@ -159,7 +214,7 @@ namespace Services.Bessines
                 {
                     foreach (var item in AddPishFactorViewModel.rows)
                     {
-                        
+
                         var p = _ProductAndService.Entities.Find(item.ProductAndService_ID);
                         item.UnitPrice = p.UnitPrice;
                         if (p.UnitType == UnitType.SquareMeters)
@@ -182,6 +237,7 @@ namespace Services.Bessines
 
 
                 _Factor.Add(Factor);
+                
                 //ذخیره ردیف های فاکتور
                 List<Product_Factor> listrow = new List<Product_Factor>();
                 foreach (var item in AddPishFactorViewModel.rows)
@@ -230,6 +286,55 @@ namespace Services.Bessines
                             FileName = FName,
                             Facor_ID = Factor.Id
                         });
+                    }
+                }
+                //ارسال اس ام اس 
+                if (!string.IsNullOrEmpty(client.ClientPhone))
+                {
+                    try
+                    {
+                        SMSManager sMSManager = new SMSManager(_siteSetting.SMSConfiguration.ApiKey, _siteSetting.SMSConfiguration.SecurityCode);
+                        SmsIrRestful.UltraFastParameters[] paramert =
+                        {
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "UserName",
+                    ParameterValue = client.ClientName
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "FactorType",
+                    ParameterValue = "پیش فاکتور"
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "FactorNumber",
+                    ParameterValue = Factor.Id.ToString()
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "Price",
+                    ParameterValue = Factor.FactorPrice.ToString("n0")+"ريال"
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "Description",
+                    ParameterValue = ""
+                }
+                };
+                        var mobile = long.Parse(client.ClientPhone);
+                        var dto = new SmsIrRestful.UltraFastSend()
+                        {
+                            Mobile = mobile,
+                            ParameterArray = paramert,
+                            TemplateId = _siteSetting.SMSConfiguration.FactorThemplateID
+                        };
+                        var sms = sMSManager.VerificationCodeByThemplate(dto);
+                    }
+                    catch (Exception)
+                    {
+
+                        throw;
                     }
                 }
                 return Factor.Id;
@@ -353,7 +458,7 @@ namespace Services.Bessines
                     Comment = string.Format("فاکتور فروش " + Factor.Id + client.ClientName),
 
                 });
-                if (Factor.Taxes!=0)
+                if (Factor.Taxes != 0)
                 {
                     _Sanad.Add(new Sanad()
                     {
@@ -391,7 +496,55 @@ namespace Services.Bessines
 
                     });
                 }
+                //ارسال اس ام اس 
+                if (!string.IsNullOrEmpty(client.ClientPhone))
+                {
+                    try
+                    {
+                        SMSManager sMSManager = new SMSManager(_siteSetting.SMSConfiguration.ApiKey, _siteSetting.SMSConfiguration.SecurityCode);
+                        SmsIrRestful.UltraFastParameters[] paramert =
+                        {
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "UserName",
+                    ParameterValue = client.ClientName
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "FactorType",
+                    ParameterValue = "فاکتور"
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "FactorNumber",
+                    ParameterValue = Factor.Id.ToString()
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "Price",
+                    ParameterValue = Factor.FactorPrice.ToString("n0")+"ريال"
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "Description",
+                    ParameterValue = ""
+                }
+                };
+                        var mobile = long.Parse(client.ClientPhone);
+                        var dto = new SmsIrRestful.UltraFastSend()
+                        {
+                            Mobile = mobile,
+                            ParameterArray = paramert,
+                            TemplateId = _siteSetting.SMSConfiguration.FactorThemplateID
+                        };
+                        var sms = sMSManager.VerificationCodeByThemplate(dto);
+                    }
+                    catch (Exception)
+                    {
 
+                        throw;
+                    }
+                }
                 return Factor.Id;
             }
             catch
@@ -439,7 +592,7 @@ namespace Services.Bessines
                         Comment = string.Format("فاکتور فروش " + factor.Id + client.ClientName),
 
                     });
-                    if (factor.Taxes!=0)
+                    if (factor.Taxes != 0)
                     {
                         _Sanad.Add(new Sanad()
                         {
@@ -477,7 +630,55 @@ namespace Services.Bessines
 
                         });
                     }
+                    //ارسال اس ام اس 
+                    if (!string.IsNullOrEmpty(client.ClientPhone))
+                    {
+                        try
+                        {
+                            SMSManager sMSManager = new SMSManager(_siteSetting.SMSConfiguration.ApiKey, _siteSetting.SMSConfiguration.SecurityCode);
+                            SmsIrRestful.UltraFastParameters[] paramert =
+                            {
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "UserName",
+                    ParameterValue = client.ClientName
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "FactorType",
+                    ParameterValue = " فاکتور"
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "FactorNumber",
+                    ParameterValue = factor.Id.ToString()
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "Price",
+                    ParameterValue = factor.FactorPrice.ToString("n0")+"ريال"
+                },
+                new SmsIrRestful.UltraFastParameters()
+                {
+                    Parameter = "Description",
+                    ParameterValue = ""
+                }
+                };
+                            var mobile = long.Parse(client.ClientPhone);
+                            var dto = new SmsIrRestful.UltraFastSend()
+                            {
+                                Mobile = mobile,
+                                ParameterArray = paramert,
+                                TemplateId = _siteSetting.SMSConfiguration.FactorThemplateID
+                            };
+                            var sms = sMSManager.VerificationCodeByThemplate(dto);
+                        }
+                        catch (Exception)
+                        {
 
+                            throw;
+                        }
+                    }
                     return true;
                 }
                 return false;
@@ -499,23 +700,23 @@ namespace Services.Bessines
                 if (factor != null && factor.FactorType != FactorType.PishFactor)
                 {
                     factor.FactorType = FactorType.PishFactor;
-                    
-                    _Factor.Update(factor,false);
+
+                    _Factor.Update(factor, false);
                     var sheading = _SanadHeading.Entities.Where(p => p.FactorID == Factor_ID).SingleOrDefault();
                     List<Sanad> sanads = new List<Sanad>();
-                    foreach (var item in _Sanad.Entities.Where(p=>p.SanadHeading_ID==sheading.Id))
+                    foreach (var item in _Sanad.Entities.Where(p => p.SanadHeading_ID == sheading.Id))
                     {
                         sanads.Add(item);
                     }
-                    _Sanad.DeleteRange(sanads,false);
+                    _Sanad.DeleteRange(sanads, false);
                     _SanadHeading.Delete(sheading);
                     var manufactur = _Manufacture.Entities.Where(p => p.Factor_ID == Factor_ID).SingleOrDefault();
                     List<ManufactureHistory> manufactureHistories = new List<ManufactureHistory>();
-                    foreach (var item in _ManufactureHistory.Entities.Where(p=>p.Manufacture_ID==manufactur.Id))
+                    foreach (var item in _ManufactureHistory.Entities.Where(p => p.Manufacture_ID == manufactur.Id))
                     {
                         manufactureHistories.Add(item);
                     }
-                    _ManufactureHistory.DeleteRange(manufactureHistories,false);
+                    _ManufactureHistory.DeleteRange(manufactureHistories, false);
                     _Manufacture.Delete(manufactur);
                     return true;
                 }
@@ -535,11 +736,11 @@ namespace Services.Bessines
                 if (factor != null)
                 {
                     List<Product_Factor> listp = new List<Product_Factor>();
-                    foreach (var item in _Product_Factor.Entities.Where(p=>p.Factor_ID==FactorID))
+                    foreach (var item in _Product_Factor.Entities.Where(p => p.Factor_ID == FactorID))
                     {
                         listp.Add(item);
                     }
-                    _Product_Factor.DeleteRange(listp, false); 
+                    _Product_Factor.DeleteRange(listp, false);
 
 
                     factor.User_ID = AddFactorViewModel.User_ID;
@@ -573,7 +774,7 @@ namespace Services.Bessines
                         factor.Taxes = factor.FactorPrice * Convert.ToDecimal(0.09);
                     factor.FactorPrice = factor.FactorPrice + factor.Taxes;
 
-                    _Factor.Update(factor,false);
+                    _Factor.Update(factor, false);
                     //ذخیره ردیف های فاکتور
 
                     List<Product_Factor> listrow = new List<Product_Factor>();
@@ -650,10 +851,10 @@ namespace Services.Bessines
                     }
 
                     factor.Discount = factor.TotalPrice * (client.DiscountPercent / 100);
-                    
+
                     factor.FactorPrice = factor.TotalPrice - factor.Discount;
                     factor.Taxes = 0;
-                    
+
                     factor.FactorPrice = factor.FactorPrice + factor.Taxes;
 
                     _Factor.Update(factor, false);
@@ -703,11 +904,11 @@ namespace Services.Bessines
                 if (factor != null)
                 {
                     List<Product_Factor> list = new List<Product_Factor>();
-                    foreach (var item in _Product_Factor.Entities.Where(p=>p.Factor_ID== FactorID))
+                    foreach (var item in _Product_Factor.Entities.Where(p => p.Factor_ID == FactorID))
                     {
                         list.Add(item);
                     }
-                    _Product_Factor.DeleteRange(list,false);
+                    _Product_Factor.DeleteRange(list, false);
 
 
                     factor.User_ID = AddFactorViewModel.User_ID;
@@ -740,7 +941,7 @@ namespace Services.Bessines
                         factor.Taxes = factor.FactorPrice * Convert.ToDecimal(0.09);
                     factor.FactorPrice = factor.FactorPrice + factor.Taxes;
 
-                    _Factor.Update(factor,false);
+                    _Factor.Update(factor, false);
                     //ذخیره ردیف های فاکتور
 
                     List<Product_Factor> listrow = new List<Product_Factor>();
@@ -764,7 +965,7 @@ namespace Services.Bessines
                         r.RowDiscription = item.RowDiscription;
                         listrow.Add(r);
                     }
-                    _Product_Factor.AddRange(listrow,false);
+                    _Product_Factor.AddRange(listrow, false);
                     var sanadheading = _SanadHeading.Entities.Where(prop => prop.FactorID == factor.Id).SingleOrDefault();
 
                     List<Sanad> sanadlist = new List<Sanad>();
@@ -772,7 +973,7 @@ namespace Services.Bessines
                     {
                         sanadlist.Add(item);
                     }
-                    _Sanad.DeleteRange(sanadlist,false);
+                    _Sanad.DeleteRange(sanadlist, false);
                     _Sanad.Add(new Sanad()
                     {
                         SanadHeading_ID = sanadheading.Id,
@@ -780,7 +981,7 @@ namespace Services.Bessines
                         Bedehkari = Convert.ToInt32(factor.TotalPrice),
                         Comment = string.Format("فاکتور فروش " + factor.Id),
 
-                    },false);
+                    }, false);
                     _Sanad.Add(new Sanad()
                     {
                         SanadHeading_ID = sanadheading.Id,
@@ -789,7 +990,7 @@ namespace Services.Bessines
                         Comment = string.Format("فاکتور فروش " + factor.Id + client.ClientName),
 
                     });
-                    if (factor.Taxes!=0)
+                    if (factor.Taxes != 0)
                     {
                         _Sanad.Add(new Sanad()
                         {
@@ -817,7 +1018,7 @@ namespace Services.Bessines
                             Bestankari = Convert.ToInt32(factor.Discount),
                             Comment = string.Format("تخفیف فاکتور " + factor.Id),
 
-                        },false);
+                        }, false);
                         _Sanad.Add(new Sanad()
                         {
                             SanadHeading_ID = sanadheading.Id,
@@ -845,7 +1046,7 @@ namespace Services.Bessines
             {
                 var factor = _Factor.GetById(FactorID);
                 List<Product_Factor> l = new List<Product_Factor>();
-                foreach (var item in _Product_Factor.Entities.Where(p => p.Factor_ID==FactorID))
+                foreach (var item in _Product_Factor.Entities.Where(p => p.Factor_ID == FactorID))
                 {
                     l.Add(item);
                 }
@@ -853,14 +1054,14 @@ namespace Services.Bessines
                 _Product_Factor.DeleteRange(l, false);
 
                 List<FactorAttachment> lattach = new List<FactorAttachment>();
-                foreach (var item in _FactorAttachment.Entities.Where(p=>p.Facor_ID==FactorID))
+                foreach (var item in _FactorAttachment.Entities.Where(p => p.Facor_ID == FactorID))
                 {
                     lattach.Add(item);
                 }
                 _FactorAttachment.DeleteRange(lattach, false);
                 var manufactur = _Manufacture.Entities.Where(p => p.Factor_ID == FactorID).SingleOrDefault();
                 List<ManufactureHistory> manufactureHistories = new List<ManufactureHistory>();
-                if (manufactur!=null)
+                if (manufactur != null)
                 {
                     var list = _ManufactureHistory.Entities.Where(p => p.Manufacture_ID == manufactur.Id).ToList();
                     foreach (var item in list)
@@ -870,10 +1071,10 @@ namespace Services.Bessines
                     _ManufactureHistory.DeleteRange(manufactureHistories, false);
                     _Manufacture.Delete(manufactur);
                 }
-               
+
                 var sanadheading = _SanadHeading.Entities.Where(p => p.FactorID == FactorID).SingleOrDefault();
                 List<Sanad> sanad = new List<Sanad>();
-                if (sanadheading!=null)
+                if (sanadheading != null)
                 {
                     foreach (var item in _Sanad.Entities.Where(p => p.SanadHeading_ID == sanadheading.Id).ToList())
                     {
@@ -883,11 +1084,11 @@ namespace Services.Bessines
                     _SanadHeading.Delete(sanadheading, false);
                 }
                 var experthistory = _ExpertHistory.Entities.Where(p => p.Facor_ID == factor.Id).SingleOrDefault();
-                if (experthistory!=null)
+                if (experthistory != null)
                 {
                     _ExpertHistory.Delete(experthistory);
                 }
-               
+
                 _Factor.Delete(factor);
 
                 return true;
@@ -959,12 +1160,12 @@ namespace Services.Bessines
             }
 
         }
-        public async Task<bool> UpdateBank(int id,Bank bank)
+        public async Task<bool> UpdateBank(int id, Bank bank)
         {
             try
             {
                 var ban = _Bank.GetById(id);
-                if (ban!=null)
+                if (ban != null)
                 {
                     ban.BankTitle = bank.BankTitle;
                     _Bank.Update(ban);
@@ -1018,13 +1219,13 @@ namespace Services.Bessines
             {
                 SanadHeading sh = _SanadHeading.GetById(SanadID);
                 sh.Discription = sanadViewModel.Discription;
-                _SanadHeading.Update(sh,false);
+                _SanadHeading.Update(sh, false);
                 List<Sanad> listsanad = new List<Sanad>();
-                foreach (var item in _Sanad.Entities.Where(p=>p.SanadHeading_ID== SanadID))
+                foreach (var item in _Sanad.Entities.Where(p => p.SanadHeading_ID == SanadID))
                 {
                     listsanad.Add(item);
                 }
-                _Sanad.DeleteRange(listsanad,false);
+                _Sanad.DeleteRange(listsanad, false);
                 List<Sanad> list = new List<Sanad>();
 
                 foreach (var item in sanadViewModel.Sanads)
@@ -1056,7 +1257,7 @@ namespace Services.Bessines
             {
                 var sanadh = _SanadHeading.GetById(SanadHeading);
                 List<Sanad> sanads = new List<Sanad>();
-                foreach (var item in _Sanad.Entities.Where(p=>p.SanadHeading_ID==sanadh.Id))
+                foreach (var item in _Sanad.Entities.Where(p => p.SanadHeading_ID == sanadh.Id))
                 {
                     sanads.Add(item);
                 }
@@ -1081,7 +1282,7 @@ namespace Services.Bessines
                     Int64 Bestankari = _Sanad.TableNoTracking.Where(p => p.AccountingHeading_ID == a && p.Bestankari > 0).Sum(p => p.Bestankari);
                     var result = Bestankari - bedehkari;
                     ClientAccountingStatus respons = new ClientAccountingStatus();
-                    
+
                     if (result > 0)
                         respons.status = "بستانکار";
                     if (result < 0)
@@ -1099,8 +1300,8 @@ namespace Services.Bessines
 
                 return null;
             }
-            
-            
+
+
         }
         public async Task<bool> AddsanadAttachment(int sanadid, IFormFile file)
         {

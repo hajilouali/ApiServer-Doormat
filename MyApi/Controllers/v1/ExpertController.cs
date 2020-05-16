@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Common;
 using Common.Exceptions;
 using Data.Repositories;
 using Entities;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using MyApi.Models;
 using Services.Bessines;
 using Services.ViewModels.Requests;
@@ -43,8 +45,8 @@ namespace MyApi.Controllers.v1
         private readonly IHostingEnvironment _hostingEnvironment;
         private readonly IRepository<ManufactureHistory> _ManufactureHistory;
         private readonly IRepository<SanadAttachment> _SanadAttachment;
-
-        public ExpertController(IRepository<Expert> expert, IRepository<ExpertHistory> expertHistory, IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, UserManager<User> userManager, IRepository<SanadAttachment> sanadAttachment)
+        private readonly SiteSettings _siteSetting;
+        public ExpertController(IRepository<Expert> expert, IRepository<ExpertHistory> expertHistory, IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, UserManager<User> userManager, IRepository<SanadAttachment> sanadAttachment, IConfiguration configuration)
         {
             _Expert = expert;
             _ExpertHistory = expertHistory;
@@ -62,6 +64,7 @@ namespace MyApi.Controllers.v1
             _ManufactureHistory = manufactureHistory;
             _userManager = userManager;
             _SanadAttachment = sanadAttachment;
+            _siteSetting = configuration.GetSection(nameof(SiteSettings)).Get<SiteSettings>();
         }
         [HttpPost("[action]")]
         public async Task<ApiResult<List<ExpertDto>>> GetExpertbyTime(ManufactureRequest dto, CancellationToken CancellationToken)
@@ -166,7 +169,7 @@ namespace MyApi.Controllers.v1
 
                 if (userrolls.Where(p => p.Equals("Admin") || p.Equals("Accountants")).Any())
                 {
-                    AccountingProgres accounting = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+                    AccountingProgres accounting = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
                     idd = await accounting.AddPishFactor(model, file);
                 }
                 else

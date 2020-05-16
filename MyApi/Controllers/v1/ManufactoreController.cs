@@ -1,4 +1,5 @@
 ﻿using AutoMapper.QueryableExtensions;
+using Common;
 using Common.Exceptions;
 using Data.Repositories;
 using Entities;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using MyApi.Models;
 using Services.Bessines;
 using System;
@@ -38,7 +40,8 @@ namespace MyApi.Controllers.v1
         private readonly IRepository<ManufactureHistory> _ManufactureHistory;
         private readonly IRepository<ExpertHistory> _ExpertHistory;
         private readonly IRepository<SanadAttachment> _SanadAttachment;
-        public ManufactoreController(IRepository<Manufacture> manufacture, IRepository<ManufactureHistory> manufactureHistory, UserManager<User> userManager, IRepository<Factor> factor = null, IRepository<Product_Factor> product_Factor = null, IRepository<FactorAttachment> factorAttachment = null, IRepository<ProductAndService> productAndService = null, IRepository<Client> client = null, IRepository<SanadHeading> sanadHeading = null, IRepository<Sanad> sanad = null, IRepository<Bank> bank = null, IRepository<AccountingHeading> accountingHeading = null, IHostingEnvironment hostingEnvironment = null, IRepository<ExpertHistory> expertHistory = null, IRepository<SanadAttachment> sanadAttachment = null)
+        private readonly SiteSettings _siteSetting;
+        public ManufactoreController(IConfiguration configuration,IRepository<Manufacture> manufacture, IRepository<ManufactureHistory> manufactureHistory, UserManager<User> userManager, IRepository<Factor> factor = null, IRepository<Product_Factor> product_Factor = null, IRepository<FactorAttachment> factorAttachment = null, IRepository<ProductAndService> productAndService = null, IRepository<Client> client = null, IRepository<SanadHeading> sanadHeading = null, IRepository<Sanad> sanad = null, IRepository<Bank> bank = null, IRepository<AccountingHeading> accountingHeading = null, IHostingEnvironment hostingEnvironment = null, IRepository<ExpertHistory> expertHistory = null, IRepository<SanadAttachment> sanadAttachment = null)
         {
             _Manufacture = manufacture;
             _ManufactureHistory = manufactureHistory;
@@ -55,6 +58,7 @@ namespace MyApi.Controllers.v1
             _hostingEnvironment = hostingEnvironment;
             _ExpertHistory = expertHistory;
             _SanadAttachment = sanadAttachment;
+            _siteSetting = configuration.GetSection(nameof(SiteSettings)).Get<SiteSettings>();
         }
         [HttpGet("[action]")]
         public async Task<ApiResult<List<ManufactureDto>>> GetManufacture()
@@ -62,7 +66,7 @@ namespace MyApi.Controllers.v1
             var list = _Manufacture.TableNoTracking.Where(p=>p.ConditionManufacture!=ConditionManufacture.Install&& p.ConditionManufacture != ConditionManufacture.DeliverToClient&& p.ConditionManufacture != ConditionManufacture.DeliverToPartner).Include(p=>p.ManufactureHistories).ProjectTo<ManufactureDto>().ToList();
             if (list != null)
             {
-                AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+                AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
 
                 foreach (var item in list)
                 {
@@ -83,7 +87,7 @@ namespace MyApi.Controllers.v1
                 
                 if (list != null)
                 {
-                    AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+                    AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
 
                     foreach (var item in list)
                     {
@@ -104,7 +108,7 @@ namespace MyApi.Controllers.v1
                 var list = _Manufacture.TableNoTracking.Where(p => p.InDateTime>=start&&p.InDateTime<=end).Include(p => p.ManufactureHistories).ProjectTo<ManufactureDto>().ToList();
                 if (list != null)
                 {
-                    AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+                    AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
 
                     foreach (var item in list)
                     {

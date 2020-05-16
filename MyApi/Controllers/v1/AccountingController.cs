@@ -1,4 +1,5 @@
 ﻿using AutoMapper.QueryableExtensions;
+using Common;
 using Common.Exceptions;
 using Data.Repositories;
 using Entities;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using MyApi.Models;
 using Services.Bessines;
 using Services.ViewModels.Requests;
@@ -42,7 +44,8 @@ namespace MyApi.Controllers.v1
         private readonly IRepository<ManufactureHistory> _ManufactureHistory;
         private readonly IRepository<ExpertHistory> _ExpertHistory;
         private readonly IRepository<SanadAttachment> _SanadAttachment;
-        public AccountingController(IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, UserManager<User> userManager, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, IRepository<ExpertHistory> expertHistory, IRepository<SanadAttachment> sanadAttachment)
+        private readonly SiteSettings _siteSetting;
+        public AccountingController(IRepository<Factor> factor, IRepository<Product_Factor> product_Factor, IRepository<FactorAttachment> factorAttachment, IRepository<Manufacture> manufacture, IRepository<ProductAndService> productAndService, IRepository<Client> client, IRepository<SanadHeading> sanadHeading, IRepository<Sanad> sanad, IRepository<Bank> bank, IRepository<AccountingHeading> accountingHeading, UserManager<User> userManager, IHostingEnvironment hostingEnvironment, IRepository<ManufactureHistory> manufactureHistory, IRepository<ExpertHistory> expertHistory, IRepository<SanadAttachment> sanadAttachment, IConfiguration configuration)
         {
             _Factor = factor;
             _Product_Factor = product_Factor;
@@ -59,6 +62,7 @@ namespace MyApi.Controllers.v1
             _ManufactureHistory = manufactureHistory;
             _ExpertHistory = expertHistory;
             _SanadAttachment = sanadAttachment;
+            _siteSetting = configuration.GetSection(nameof(SiteSettings)).Get<SiteSettings>();
         }
         [Authorize(Roles = "Admin,Accountants")]
         [HttpGet("[action]")]
@@ -128,7 +132,7 @@ namespace MyApi.Controllers.v1
         public async Task<ActionResult<FactorDto>> AddFactor(AddFactorViewModel dto, CancellationToken cancellationToken, List<IFormFile> file = null)
         {
             dto.User_ID = _userManager.Users.Where(p => p.UserName == User.Identity.Name).SingleOrDefault().Id;
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respons = await usersProcess.AddFactor(dto, file);
             if (respons != 0)
             {
@@ -146,7 +150,7 @@ namespace MyApi.Controllers.v1
         public async Task<ActionResult<FactorDto>> AddPishFactor(AddFactorViewModel dto, CancellationToken cancellationToken, List<IFormFile> file = null)
         {
             dto.User_ID = _userManager.Users.Where(p => p.UserName == User.Identity.Name).SingleOrDefault().Id;
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respons = await usersProcess.AddPishFactor(dto, file);
             if (respons != 0)
             {
@@ -163,7 +167,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ActionResult<FactorDto>> CheangToFactor(int id, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respuns = usersProcess.ChangeToFactor(id);
             if (respuns)
                 return await _Factor.TableNoTracking.Include(p => p.Product_Factor).ProjectTo<FactorDto>().SingleOrDefaultAsync(p => p.Id.Equals(id), cancellationToken);
@@ -175,7 +179,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ActionResult<FactorDto>> CheangToPishFactor(int id, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respuns = usersProcess.ChangeToPishFactor(id);
             if (respuns)
                 return await _Factor.TableNoTracking.Include(p => p.Product_Factor).ProjectTo<FactorDto>().SingleOrDefaultAsync(p => p.Id.Equals(id), cancellationToken);
@@ -187,7 +191,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ActionResult<FactorDto>> UpdateFactor(int id, AddFactorViewModel Dto, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var factor = _Factor.GetById(id);
             if (factor.FactorType == FactorType.Factor)
             {
@@ -211,7 +215,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ActionResult<FactorDto>> UpdatePishFactor(int id, AddFactorViewModel Dto, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var factor = _Factor.GetById(id);
             if (factor.FactorType == FactorType.PishFactor)
             {
@@ -235,7 +239,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ApiResult> DeleteFactor(int id, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respuns = await usersProcess.DeleteFactor(id);
             if (respuns)
                 return Ok();
@@ -245,7 +249,7 @@ namespace MyApi.Controllers.v1
         [HttpPost("[action]/{id:int}")]
         public async Task<ApiResult> AddFactorAttachment(int id, IFormFile file)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respuns = await usersProcess.AddFactorAttachment(id, file);
             if (respuns)
                 return Ok();
@@ -404,7 +408,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ActionResult<SanadHeadingDto>> AddSanad(sanadViewModel sanadViewModel, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respuns = await usersProcess.addSanad(sanadViewModel);
             if (respuns != 0)
             {
@@ -420,7 +424,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ActionResult<SanadHeadingDto>> UpdateSanad(int id, sanadViewModel sanadViewModel, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respuns = await usersProcess.UpdateSanad(id, sanadViewModel);
             if (respuns != 0)
             {
@@ -437,7 +441,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ApiResult> DeletSanad(int id)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respuns = await usersProcess.DeletSanad(id);
             if (respuns)
                 return Ok();
@@ -448,7 +452,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ApiResult> AddsanadAttachment(int id, IFormFile file)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var respuns = await usersProcess.AddsanadAttachment(id, file);
             if (respuns)
                 return Ok();
@@ -489,7 +493,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ClientAccountingStatus> GetClientStatus(int id)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
             var result = await usersProcess.ClientAccountingStatus(id);
             if (result != null)
                 return result;
@@ -520,7 +524,7 @@ namespace MyApi.Controllers.v1
 
         public async Task<ApiResult<List<SanadAccountingDto>>> Accounting(AcountingReviw Dto, CancellationToken cancellationToken)
         {
-            AccountingProgres usersProcess = new AccountingProgres(_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
+            AccountingProgres usersProcess = new AccountingProgres(_siteSetting,_Factor, _Product_Factor, _FactorAttachment, _Manufacture, _ProductAndService, _Client, _SanadHeading, _Sanad, _Bank, _AccountingHeading, _hostingEnvironment, _ManufactureHistory, _ExpertHistory, _SanadAttachment);
 
             List<SanadAccountingDto> List = new List<SanadAccountingDto>();
 
