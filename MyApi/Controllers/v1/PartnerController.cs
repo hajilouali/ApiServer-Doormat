@@ -27,7 +27,7 @@ using WebFramework.Api;
 
 namespace MyApi.Controllers.v1
 {
-    [Authorize(Roles = "Admin,CellPartner")]
+    
     [ApiVersion("1")]
     public class PartnerController : BaseController
     {
@@ -66,7 +66,7 @@ namespace MyApi.Controllers.v1
             _SanadAttachment = sanadAttachment;
             _siteSetting = configuration.GetSection(nameof(SiteSettings)).Get<SiteSettings>();
         }
-
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpGet("[action]")]
         public async Task<ActionResult<PartnerIformation>> GetCurentUserInformation(CancellationToken cancellationToken)
         {
@@ -107,6 +107,7 @@ namespace MyApi.Controllers.v1
                 };
             return model;
         }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpPost("[action]")]
         public async Task<ActionResult<List<FactorDto>>> GetFactorList(GetFactorDto GetFactorDto, CancellationToken cancellationToken)
         {
@@ -133,6 +134,7 @@ namespace MyApi.Controllers.v1
             }
             return Ok(Factors);
         }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpGet("[action]/{id}")]
         public async Task<ActionResult<FactorDto>> GetFactor(int id, CancellationToken cancellationToken)
         {
@@ -145,6 +147,20 @@ namespace MyApi.Controllers.v1
             }
             throw new BadRequestException("مشکلی در فرایند مشاهده فاکتور ایجاد شده است");
         }
+        [HttpGet("[action]/{code}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<FactorDto>> GetFactorByCode(string code, CancellationToken cancellationToken)
+        {
+            //var user = await _userManager.FindByNameAsync(User.Identity.Name);
+            //var client = _Client.Entities.Where(p => p.User_ID == user.Id).FirstOrDefault();
+            var factor = await _Factor.TableNoTracking.Where(p => p.FactorCodeView == code).Include(p => p.Product_Factor).Include(p => p.Manufacture).ThenInclude(p => p.ManufactureHistories).ProjectTo<FactorDto>().FirstOrDefaultAsync(cancellationToken);
+            if (factor!=null)
+            {
+                return factor;
+            }
+            throw new BadRequestException("مشکلی در فرایند مشاهده فاکتور ایجاد شده است");
+        }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpGet("[action]/{id}")]
         public async Task<ActionResult<List<FactorAttachment>>> GetFactorAttachment(int id, CancellationToken cancellationToken)
         {
@@ -157,6 +173,7 @@ namespace MyApi.Controllers.v1
             }
             throw new BadRequestException("مشکلی در فرایند مشاهده فاکتور ایجاد شده است");
         }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpGet("[action]/{id}")]
         public async Task<ActionResult> DeleteFactorAttachment(int id, CancellationToken cancellationToken)
         {
@@ -171,6 +188,7 @@ namespace MyApi.Controllers.v1
             }
             throw new BadRequestException("مشکلی در فرایند مشاهده فاکتور ایجاد شده است");
         }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpPost("[action]/{id}")]
         public async Task<ActionResult<FactorAttachment>> AddAttacmentToFactor(int id,
             CancellationToken cancellationToken)
@@ -211,6 +229,7 @@ namespace MyApi.Controllers.v1
             
            throw new BadRequestException("مشکلی در فرایند مشاهده فاکتور ایجاد شده است");
         }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpPost("[action]/{id}")]
         public async Task<ActionResult<FactorAttachment>> AddAttacmentDiscription(int id, attacgmodel dto ,
             CancellationToken cancellationToken)
@@ -234,6 +253,7 @@ namespace MyApi.Controllers.v1
 
             throw new BadRequestException("مشکلی در فرایند مشاهده فاکتور ایجاد شده است");
         }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpGet("[action]")]
         public async Task<ActionResult<List<ProductAndServiceDto>>> GetProducts(CancellationToken cancellationToken)
         {
@@ -242,6 +262,7 @@ namespace MyApi.Controllers.v1
                 .ToListAsync(cancellationToken);
             return dto;
         }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpPost("[action]")]
         public async Task<ActionResult<FactorDto>> AddNewFactor(AddFactorPartnerViewModel dto,
             CancellationToken cancellationToken)
@@ -262,6 +283,7 @@ namespace MyApi.Controllers.v1
 
             throw new BadRequestException("مشکلی در فرایند ثیت فاکتور ایجاد شده است");
         }
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpPost("[action]/{id}")]
         public async Task<ActionResult<FactorDto>> UpdateFactor(int id ,AddFactorPartnerViewModel dto,
             CancellationToken cancellationToken)
@@ -288,7 +310,7 @@ namespace MyApi.Controllers.v1
 
             throw new BadRequestException("مشکلی در فرایند بروزرسانی فاکتور ایجاد شده است");
         }
-
+        [Authorize(Roles = "Admin,CellPartner")]
         [HttpPost("[action]")]
 
         public async Task<ApiResult<List<SanadDto>>> AccountingHeadingMoein(AcountingMoein ClientMoein, CancellationToken cancellationToken)

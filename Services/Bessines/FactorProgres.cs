@@ -118,7 +118,7 @@ namespace Services.Bessines
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "Description",
-                    ParameterValue = ""
+                    ParameterValue = Factor.FactorCodeView
                 }
                 };
                         var mobile = long.Parse(client.ClientPhone);
@@ -319,7 +319,7 @@ namespace Services.Bessines
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "Description",
-                    ParameterValue = ""
+                    ParameterValue = Factor.FactorCodeView
                 }
                 };
                         var mobile = long.Parse(client.ClientPhone);
@@ -509,11 +509,7 @@ namespace Services.Bessines
                     Parameter = "UserName",
                     ParameterValue = client.ClientName
                 },
-                new SmsIrRestful.UltraFastParameters()
-                {
-                    Parameter = "FactorType",
-                    ParameterValue = "فاکتور"
-                },
+                
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "FactorNumber",
@@ -527,7 +523,7 @@ namespace Services.Bessines
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "Description",
-                    ParameterValue = ""
+                    ParameterValue = Factor.FactorCodeView
                 }
                 };
                         var mobile = long.Parse(client.ClientPhone);
@@ -535,7 +531,7 @@ namespace Services.Bessines
                         {
                             Mobile = mobile,
                             ParameterArray = paramert,
-                            TemplateId = _siteSetting.SMSConfiguration.FactorThemplateID
+                            TemplateId = _siteSetting.SMSConfiguration.MCFThemplateID
                         };
                         var sms = sMSManager.VerificationCodeByThemplate(dto);
                     }
@@ -643,11 +639,7 @@ namespace Services.Bessines
                     Parameter = "UserName",
                     ParameterValue = client.ClientName
                 },
-                new SmsIrRestful.UltraFastParameters()
-                {
-                    Parameter = "FactorType",
-                    ParameterValue = " فاکتور"
-                },
+                
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "FactorNumber",
@@ -661,7 +653,7 @@ namespace Services.Bessines
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "Description",
-                    ParameterValue = ""
+                    ParameterValue = factor.FactorCodeView
                 }
                 };
                             var mobile = long.Parse(client.ClientPhone);
@@ -669,7 +661,7 @@ namespace Services.Bessines
                             {
                                 Mobile = mobile,
                                 ParameterArray = paramert,
-                                TemplateId = _siteSetting.SMSConfiguration.FactorThemplateID
+                                TemplateId = _siteSetting.SMSConfiguration.MCFThemplateID
                             };
                             var sms = sMSManager.VerificationCodeByThemplate(dto);
                         }

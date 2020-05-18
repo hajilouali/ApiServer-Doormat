@@ -33,5 +33,6 @@
         public int FactorThemplateID { get; set; }
         public int MCFThemplateID { get; set; }
         public int DeleviryFTehemplateID { get; set; }
+        public string URLFactorINFO { get; set; }
     }
 }
