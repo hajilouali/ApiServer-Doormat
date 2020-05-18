@@ -118,7 +118,7 @@ namespace Services.Bessines
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "Description",
-                    ParameterValue = Factor.FactorCodeView
+                    ParameterValue = string.Format(_siteSetting.SMSConfiguration.URLFactorINFO+Factor.FactorCodeView)
                 }
                 };
                         var mobile = long.Parse(client.ClientPhone);
@@ -319,7 +319,7 @@ namespace Services.Bessines
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "Description",
-                    ParameterValue = Factor.FactorCodeView
+                    ParameterValue = string.Format(_siteSetting.SMSConfiguration.URLFactorINFO+Factor.FactorCodeView)
                 }
                 };
                         var mobile = long.Parse(client.ClientPhone);
@@ -523,7 +523,7 @@ namespace Services.Bessines
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "Description",
-                    ParameterValue = Factor.FactorCodeView
+                    ParameterValue = string.Format(_siteSetting.SMSConfiguration.URLFactorINFO+Factor.FactorCodeView)
                 }
                 };
                         var mobile = long.Parse(client.ClientPhone);
@@ -653,7 +653,7 @@ namespace Services.Bessines
                 new SmsIrRestful.UltraFastParameters()
                 {
                     Parameter = "Description",
-                    ParameterValue = factor.FactorCodeView
+                    ParameterValue = string.Format(_siteSetting.SMSConfiguration.URLFactorINFO+factor.FactorCodeView)
                 }
                 };
                             var mobile = long.Parse(client.ClientPhone);
